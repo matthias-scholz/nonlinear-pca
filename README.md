@@ -32,7 +32,7 @@ If you use this code in a publication, please cite one of these articles.
     Bioinformatics 21(20):3887-3895. 2005.
     
 
- *  Nonlinear principal component analysis: neural network models and applications.
+ *  [Nonlinear principal component analysis: neural network models and applications.](http://pca.narod.ru/2MainGorbanKeglWunschZin.pdf)
     Matthias Scholz, Martin Fraunholz, and Joachim Selbig.
     In Principal Manifolds for Data Visualization and Dimension Reduction, edited by Alexander N. Gorban, Balázs Kégl, Donald C. Wunsch, and Andrei Zinovyev. Volume 58 of LNCSE, pages 44-67. Springer Berlin Heidelberg, 2007.
    
@@ -48,4 +48,3 @@ If you use this code in a publication, please cite one of these articles.
   *  Analysing periodic phenomena by circular PCA.
     Matthias Scholz.
     In S. Hochreiter and R. Wagner, editors, Proceedings of the Conference on Bioinformatics Research and Development BIRD'07, LNCS/LNBI Vol. 4414, pages 38-47. Springer-Verlag Berlin Heidelberg, 2007.
-  
