@@ -4,11 +4,13 @@
 
 ### Syntax ###
 
-    [pc, net] = nlpca(data, k)
+```
+#!python
+[pc, net] = nlpca(data, k)
 
-    pc = nlpca_get_components(net, data)
-    data_reconstruction = nlpca_get_data(net, pc)
-
+pc = nlpca_get_components(net, data)
+data_reconstruction = nlpca_get_data(net, pc)
+```
 
 ### Description ###
 
