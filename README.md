@@ -11,14 +11,13 @@
 `data_reconstruction = nlpca_get_data(net, pc)`
 
 
-### How do I get set up? ###
+### Description ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+`pc = nlpca(data,k)` extracts k nonlinear components from the data set. `pc` represents the estimated component values (scores).
+
+`net` is a data structure explaining the neural network parameters for the nonlinear transformation from data space to component space and reverse.
+
+`net` can be used in `nlpca_get_components` and `nlpca_get_data` to obtain component values (scores) for new data or reconstructed data for any component value. 
 
 ### Contribution guidelines ###
 
