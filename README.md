@@ -25,7 +25,27 @@
 
 ### Cite ###
 
-
 If you use this code in a publication, please cite one of these articles.
-* Repo owner or admin
-* Other community or team contact
+
+* Non-linear PCA: a missing data approach.
+    Matthias Scholz, Fatma Kaplan, Charles L. Guy, Joachim Kopka, and Joachim Selbig.
+    Bioinformatics 21(20):3887-3895. 2005.
+    
+
+ *  Nonlinear principal component analysis: neural network models and applications.
+    Matthias Scholz, Martin Fraunholz, and Joachim Selbig.
+    In Principal Manifolds for Data Visualization and Dimension Reduction, edited by Alexander N. Gorban, Balázs Kégl, Donald C. Wunsch, and Andrei Zinovyev. Volume 58 of LNCSE, pages 44-67. Springer Berlin Heidelberg, 2007.
+   
+ * Validation of nonlinear PCA.
+    Matthias Scholz
+    Neural Processing Letters, Volume 36, Number 1, Pages 21-30, 2012.
+   
+ *  Nonlinear PCA: a new hierarchical approach.
+    Matthias Scholz and Ricardo Vigário.
+    In M. Verleysen, editor, Proceedings ESANN. 2002.
+  
+
+  *  Analysing periodic phenomena by circular PCA.
+    Matthias Scholz.
+    In S. Hochreiter and R. Wagner, editors, Proceedings of the Conference on Bioinformatics Research and Development BIRD'07, LNCS/LNBI Vol. 4414, pages 38-47. Springer-Verlag Berlin Heidelberg, 2007.
+  
