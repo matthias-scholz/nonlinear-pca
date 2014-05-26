@@ -35,7 +35,7 @@ If you use this code in a publication, please cite one of these articles.
     Matthias Scholz, Martin Fraunholz, and Joachim Selbig.
     In Principal Manifolds for Data Visualization and Dimension Reduction, edited by Alexander N. Gorban, Balázs Kégl, Donald C. Wunsch, and Andrei Zinovyev. Volume 58 of LNCSE, pages 44-67. Springer Berlin Heidelberg, 2007.
    
- * Validation of nonlinear PCA.
+ * [Validation of nonlinear PCA.](http://www.matthias-scholz.de/scholz_NLPCA_validation_NeuralProcessLett2012.pdf)
     Matthias Scholz
     Neural Processing Letters, Volume 36, Number 1, Pages 21-30, 2012.
    
