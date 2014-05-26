@@ -23,7 +23,7 @@
 In this example nonlinear PCA (circular PCA) is applied to artificial data of a noisy circle.
 
 ```
-#!text/matlab
+#!python
 % generate circular data 
 t=linspace(-pi , +pi , 100);  % angular value t=-pi,...,+pi
 data = [sin(t);cos(t)];       % circle
