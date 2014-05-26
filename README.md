@@ -2,11 +2,14 @@
 
 [Nonlinear principal component analysis (NLPCA)](http://www.nlpca.org/) based on auto-associative neural networks (autoencoder).
 
-### What is this repository for? ###
+### Syntax ###
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+`[pc, net] = nlpca(data, k)`
+
+`pc = nlpca_get_components(net, data)`
+
+`data_reconstruction = nlpca_get_data(net, pc)`
+
 
 ### How do I get set up? ###
 
