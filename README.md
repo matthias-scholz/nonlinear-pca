@@ -39,7 +39,7 @@ If you use this code in a publication, please cite one of these articles.
     Matthias Scholz
     Neural Processing Letters, Volume 36, Number 1, Pages 21-30, 2012.
    
- *  Nonlinear PCA: a new hierarchical approach.
+ *  [Nonlinear PCA: a new hierarchical approach.](http://www.matthias-scholz.de/scholz_vigario_NLPCA_esann2002.pdf)
     Matthias Scholz and Ricardo Vigário.
     In M. Verleysen, editor, Proceedings ESANN. 2002.
   
