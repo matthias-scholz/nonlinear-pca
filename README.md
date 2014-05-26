@@ -23,7 +23,9 @@
 * Code review
 * Other guidelines
 
-### Who do I talk to? ###
+### Cite ###
 
+
+If you use this code in a publication, please cite one of these articles.
 * Repo owner or admin
 * Other community or team contact
