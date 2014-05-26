@@ -36,6 +36,15 @@ data = data + 0.2*randn(size(data));    % add noise
 nlpca_plot(net)  
 ```  
 
+### Demos ###
+
+* `demo_hierarchical_NLPCA_StarData.m` demo of hierarchical nonlinear PCA
+* `demo_circular_PCA.m` 	demo of circular units (Circular PCA)
+* `demo_inverse_NLPCA.m` 	demo of inverse network architecture
+* `demo_missing_data.m` 	demo of missing data estimation
+
+
+
 ### Cite ###
 
 If you use this code in a publication, please cite one of these articles.
