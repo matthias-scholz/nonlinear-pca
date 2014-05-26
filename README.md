@@ -1,6 +1,6 @@
 # Nonlinear PCA toolbox for Matlab #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+[Nonlinear principal component analysis (NLPCA)](http://www.nlpca.org/) based on auto-associative neural networks (autoencoder).
 
 ### What is this repository for? ###
 
