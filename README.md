@@ -18,11 +18,21 @@
 
 `net` can be used in `nlpca_get_components` and `nlpca_get_data` to obtain component values (scores) for new data or reconstructed data for any component value. 
 
-### Contribution guidelines ###
+### Example ###
 
-* Writing tests
-* Code review
-* Other guidelines
+In this example nonlinear PCA (circular PCA) is applied to artificial data of a noisy circle.
+
+    % generate circular data 
+    t=linspace(-pi , +pi , 100);  % angular value t=-pi,...,+pi
+    data = [sin(t);cos(t)];       % circle
+    data = data + 0.2*randn(size(data));    % add noise
+
+    % nonlinear PCA (circular PCA, inverse network architecture)
+    [c,net]=nlpca(data, 1,  'type','inverse',  'circular','yes' );
+                                
+    % plot components             
+    nlpca_plot(net)  
+  
 
 ### Cite ###
 
