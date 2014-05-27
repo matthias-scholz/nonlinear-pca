@@ -1,4 +1,5 @@
-![Nonlinear PCA](http://www.nlpca.org/fig_nlpca_nonlinear_PCA_autoencoder_3d.png "Nonlinear PCA")
+
+![Nonlinear PCA](http://www.nlpca.org/fig_nlpca_nonlinear_PCA_autoencoder_3d_small.png "Nonlinear PCA")
 
 # Nonlinear PCA toolbox for Matlab #
 
