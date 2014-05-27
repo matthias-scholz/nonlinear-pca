@@ -49,7 +49,7 @@ nlpca_plot(net)
 
 
 ### Download ###
-* [Version 0.88](https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/commits/aa3add1d1349)
+* [Version 0.88](https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/get/Version-0.88.zip)
 
 ### Cite ###
 
