@@ -1,4 +1,3 @@
-
 ![Nonlinear PCA](http://www.nlpca.org/fig_nlpca_nonlinear_PCA_autoencoder_3d_small.png "Nonlinear PCA")
 
 # Nonlinear PCA toolbox for Matlab #
@@ -49,6 +48,8 @@ nlpca_plot(net)
 * `demo_missing_data.m` 	demo of missing data estimation
 
 
+### Download ###
+* [Version 0.88](https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/commits/aa3add1d1349)
 
 ### Cite ###
 
