@@ -1,3 +1,5 @@
+![Nonlinear PCA](http://www.nlpca.org/fig_nlpca_nonlinear_PCA_autoencoder_3d.png "Nonlinear PCA")
+
 # Nonlinear PCA toolbox for Matlab #
 
 [Nonlinear principal component analysis (NLPCA)](http://www.nlpca.org/) based on auto-associative neural networks (autoencoder).
