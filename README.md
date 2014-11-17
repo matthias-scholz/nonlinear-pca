@@ -54,7 +54,7 @@ nlpca_plot(net)
 
 ### Cite ###
 
-If you use this code in a publication, please cite one of these articles.
+If you use this toolbox in a publication, please cite one of these articles.
 
  *  [Non-linear PCA: a missing data approach.](http://bioinformatics.oxfordjournals.org/content/21/20/3887.full)
     Matthias Scholz, Fatma Kaplan, Charles L. Guy, Joachim Kopka, and Joachim Selbig.
