@@ -241,7 +241,7 @@ global CIRCULAR_R
 global SILENCE
 
 
-NLPCAversion=0.88;
+NLPCAversion=0.89;
 
 
   h=struct('data_train_in',[],...            %  1
@@ -2142,16 +2142,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [data_mean,data_std,data1,data2,data3,data4,data5,data6]=norm_data(raw_data1,raw_data2,raw_data3,raw_data4,raw_data5,raw_data6)
-%[data_mean,data_std,data1]=norm_data(raw_data1)
+function [data_mean,data_std,data1,data2,data3,data4,data5,data6]=pre_unit_variance(raw_data1,raw_data2,raw_data3,raw_data4,raw_data5,raw_data6)
+%[data_mean,data_std,data1]=pre_unit_variance(raw_data1)
 %...
-%[data_mean,data_std,data1,...,data6]=norm_data(raw_data1,...,raw_data6)
+%[data_mean,data_std,data1,...,data6]=pre_unit_variance(raw_data1,...,raw_data6)
 %
-% norm_data(...) set the dataset to zero mean and std one
+% pre_unit_variance(...) set the dataset to zero mean and std one
 %
 % data_mean and data_std are calculated using data1
-% additional datasets are standardize by 
-% using this data_mean and data_std of data1
+% additional datasets are normalized by 
+% using the same data_mean and data_std of data1
 
 % Author: Matthias Scholz
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
