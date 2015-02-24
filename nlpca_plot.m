@@ -90,7 +90,7 @@ if ~(nargin==4)
       CIRCULAR_INDEX = reshape(cnidx,2,size(pos,2));
       CIRCULAR_IDX   = hh.circular_idx;
     NET(hh.component_layer)=NET(hh.component_layer)+sum(hh.circular_idx);
-    train_in  =net_phi2pq(train_in);
+    if INVERSE, train_in  =net_phi2pq(train_in); end;
   end  
   if ~isempty(hh.data_class) % labels
     GROUP=hh.data_class;
