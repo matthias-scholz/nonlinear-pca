@@ -28,7 +28,7 @@
 % plot component
 
     nlpca_plot(net)
-    title('{\bf NLPCA inverse}')
+    title('{\bf NLPCA - inverse network architecture}')
     axis equal
  
     

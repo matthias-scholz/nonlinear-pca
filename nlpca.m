@@ -241,7 +241,7 @@ global CIRCULAR_R
 global SILENCE
 
 
-NLPCAversion=0.89;
+NLPCAversion=0.9;
 
 
   h=struct('data_train_in',[],...            %  1
@@ -289,6 +289,7 @@ NLPCAversion=0.89;
            'pca_removed_mean',[],...         % 47 result
            'eigenvectors',[],...             % 48 result
            'inverse_eigenvectors',[],...     % 49 result
+           'variance',[],...                 % result: NLPCA explained variance  
            ...
            'stepwise_error',[],...           % 61 yes, no 
            'printing_error',[],...           % 61 yes, no 
@@ -758,10 +759,41 @@ h.video_weights = [h.video_weights,VIDEO_WEIGHTS];
 h.video_iter    = [h.video_iter,VIDEO_ITER];
 h.best_test_weights=BEST_TEST_WEIGHTS;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Estimate explained variance of each nonlinear component
+
+for i=1:size(h.data_train_out,1) % get total variance, by using all available values
+   v(i)=var(h.data_train_out(i,~isnan(h.data_train_out(i,:)))); 
+end
+total_variance=sum(v(~isnan(v)));
+
+pc=nlpca_get_components(h);
+evals=nan(1,h.number_of_components);
+for i=1:h.number_of_components 
+  pcx=zeros(size(pc));
+  pcx(i,:)=pc(i,:); % only PC_i, set remaining PC's to zero
+  data_recon=nlpca_get_data(h,pcx);
+  evals(i)=sum(var(data_recon'));
+end
+
+percentVar=evals./total_variance*100; 
+percentVar=round(percentVar*100)/100;
+
+h.variance=percentVar;
+
+if ~SILENCE, 
+  fprintf(1,'# Explained variance (see: net.variance)\n')
+  for i=1:min(3,h.number_of_components) 
+    fprintf(1,'  # nonlinear PC %i: %.2f%%\n',i,h.variance(i))
+  end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargout == 2
   net=reduce_parameters(h);
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % reconstruction
 % (out=h.data_train_in;)
@@ -2698,6 +2730,7 @@ global NET
              'circular',           [],...  % yes, no
              'circular_idx',       [],...  % [1,0,0]
              'weight_matrices',    [],...  % W{1} ... W{4}
+             'variance',           [],...  % explained variance of nonlinear PC's
              'version',            []);    % 0.71
 
   net.data_train_in =h.data_train_in;
@@ -2714,6 +2747,7 @@ global NET
   net.component_layer=h.component_layer;
   net.circular=h.circular;
   net.circular_idx=h.circular_idx;
+  net.variance=h.variance;
 
   NET=h.units_per_layer;
   if strcmp(h.circular,'yes') 

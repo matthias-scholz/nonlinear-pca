@@ -2,7 +2,7 @@ function demo_missing_data
 % Nonlinear PCA for missing data estimation.
 %
 % artificial data set: helix loop
-% No sample is complete! In each sample one of the three values is missing.
+% No sample is complete! For each sample one of the three values is missing.
 %
 % see also: Scholz et al. Bioinformatics, 2005
 %           www.nlpca.org
@@ -39,6 +39,7 @@ function demo_missing_data
     data_nan=data_noised;
     data_nan(idx_nan==0)=NaN; % remove selected values from noised data set 
 
+   fprintf(1,'\n NLPCA runs on a totally incomplete data set.\n For each sample one of the three values is missing.\n');
     
 % component extraction
 
@@ -49,9 +50,14 @@ function demo_missing_data
     
 % plot component
 
-    nlpca_plot(net); hold on
-    plot3(data_noised(1,:),data_noised(2,:),data_noised(3,:),'.')
+   % plot nonlinear component
+      nlpca_plot(net); hold on
+   % for visualization, add noisy data (original complete, not missing data) 
+      plot3(data_noised(1,:),data_noised(2,:),data_noised(3,:),'.'); hold off
 
+   
+  fprintf(1,' Explained variance might be over-estimated because\n of difficulties in estimating the true total variance\n of a very incomplete missing data set.\n');
+    
     
 % missing data estimation error
 
