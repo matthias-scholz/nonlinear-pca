@@ -54,6 +54,10 @@ nlpca_plot(net)
 wget https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/get/default.zip
 ```
 
+### Help ###
+* [Frequently Asked Questions (FAQ)](http://faq.nlpca.org/)
+
+
 ### References ###
 
 If you use this toolbox in a publication, please cite one of these articles.
