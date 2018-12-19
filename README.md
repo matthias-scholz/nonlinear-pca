@@ -54,7 +54,7 @@ nlpca_plot(net)
 wget https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/get/default.zip
 ```
 
-### Cite ###
+### References ###
 
 If you use this toolbox in a publication, please cite one of these articles.
 
@@ -64,17 +64,16 @@ If you use this toolbox in a publication, please cite one of these articles.
     
  *  [Nonlinear principal component analysis: neural network models and applications.](http://pca.narod.ru/2MainGorbanKeglWunschZin.pdf)
     Matthias Scholz, Martin Fraunholz, and Joachim Selbig.
-    In Principal Manifolds for Data Visualization and Dimension Reduction, edited by Alexander N. Gorban, Bal√°zs K√©gl, Donald C. Wunsch, and Andrei Zinovyev. Volume 58 of LNCSE, pages 44-67. Springer Berlin Heidelberg, 2007.
+    In Principal Manifolds for Data Visualization and Dimension Reduction, edited by Alexander N. Gorban, Bal·zs KÈgl, Donald C. Wunsch, and Andrei Zinovyev. Volume 58 of LNCSE, pages 44-67. Springer Berlin Heidelberg, 2007.
    
  *  [Validation of nonlinear PCA.](http://www.matthias-scholz.de/scholz_NLPCA_validation_NeuralProcessLett2012.pdf)
     Matthias Scholz
     Neural Processing Letters, Volume 36, Number 1, Pages 21-30, 2012.
    
  *  [Nonlinear PCA: a new hierarchical approach.](http://www.matthias-scholz.de/scholz_vigario_NLPCA_esann2002.pdf)
-    Matthias Scholz and Ricardo Vig√°rio.
+    Matthias Scholz and Ricardo Vig·rio.
     In M. Verleysen, editor, Proceedings ESANN. 2002.
   
-
   * [Analysing periodic phenomena by circular PCA.](http://www.matthias-scholz.de/scholz_circularPCA_BIRD2007.pdf)
     Matthias Scholz.
     In S. Hochreiter and R. Wagner, editors, Proceedings of the Conference on Bioinformatics Research and Development BIRD'07, LNCS/LNBI Vol. 4414, pages 38-47. Springer-Verlag Berlin Heidelberg, 2007.
