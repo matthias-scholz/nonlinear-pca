@@ -1267,6 +1267,7 @@ function [dw,E,n_error,n_out]=derror_symmetric(w,train_in,train_out)
 
 % Author: Matthias Scholz
 % Version: 2019-01-18
+% Used in: nlpca.m & nlpca_get_components.m
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 global NET    % Example:  NET=[   2  ,   4  ,   1  ,   4  ,   2  ]
@@ -1429,26 +1430,47 @@ n_out(1:train_in_dim,:) = feval( FCT(1,:) , train_in ); % for 'circ'
     
     end  
 
-dw = matrices2vector(dW); % new <<<<<<<<<<<< 
+dw = matrices2vector(dW); 
 
+weight_decay_vector = ones(size(dw)) * WEIGHT_DECAY; % standard symmetric network, not inverse
 
+% adapt w, dw and weight-decay, in case of:
 if INVERSE
   if FIXED_WEIGHTS
-    dw = reshape(E_tmp,numel(E_tmp),1); 
-    w=zeros( numel(train_in) , 1 ); % weight decay off 
-  else
-    dw = [ reshape(E_tmp,num_elements,1) ; dw ];    
-    if CIRCULAR  
-      w=[zeros(num_elements,1);w]; % no weight decay for input      
+    w  = w_train_in;                       % weights = inverse input only
+    dw = reshape(E_tmp, num_elements,1);
+    weight_decay_vector = zeros(size(dw)); % weight-decay off 
+  else 
+    w  = [ w_train_in; w];                 % weights = inverse input + standard weights
+    dw = [ reshape(E_tmp, num_elements,1) ; dw ];
+    weight_decay_vector = ones(size(dw)) * WEIGHT_DECAY; % first, standard weight-decay for all weights
+    if CIRCULAR    
+      weight_decay_vector(1:num_elements)=0;  % remove weight-decay for inverse input, keep only for standard weights 
     else
-      w=[0.01*w_train_in;w]; % smooth (0.01) weight decay also for input values
+      weight_decay_vector(1:num_elements)=weight_decay_vector(1:num_elements) * 0.01;
     end
   end
 end
 
+dw = dw +  weight_decay_vector .* w; 
 
-
-dw = dw + WEIGHT_DECAY*w; 
+% % old 2018 version, confusing and wrong for w_train_in
+% % (correctly should be: 0.01 * WEIGHT_DECAY * w_train_in)
+% % may need to correct also derror_hierachic !!!
+% if INVERSE
+%   if FIXED_WEIGHTS
+%     dw = reshape(E_tmp,numel(E_tmp),1); 
+%     w=zeros( numel(train_in) , 1 ); % weight decay off 
+%   else
+%     dw = [ reshape(E_tmp,num_elements,1) ; dw ];    
+%     if CIRCULAR  
+%       w=[zeros(num_elements,1);w]; % no weight decay for input      
+%     else
+%       w=[0.01*w_train_in;w]; % smooth (0.01) weight decay also for input values
+%     end
+%   end
+% end
+% dw = dw + WEIGHT_DECAY*w; 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
