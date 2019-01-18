@@ -1266,6 +1266,7 @@ function [dw,E,n_error,n_out]=derror_symmetric(w,train_in,train_out)
 %
 
 % Author: Matthias Scholz
+% Version: 2019-01-18
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 global NET    % Example:  NET=[   2  ,   4  ,   1  ,   4  ,   2  ]
@@ -1292,7 +1293,7 @@ if INVERSE
    else
      num_elements = NET(1)*size(train_out,2);
      train_in = reshape( w(1:num_elements) , NET(1) , size(train_out,2) );
-     w_train_in=w(1:num_elements); % new <<<<<<<<<<<<<<<<<
+     w_train_in=w(1:num_elements); % inverse input is represented as weights
      w   = w(num_elements+1 : end);
    end
 end
@@ -1383,10 +1384,8 @@ n_out(1:train_in_dim,:) = feval( FCT(1,:) , train_in ); % for 'circ'
   % last layer
   
     S_tmp = n_out(end-NET(end)+1:end,:);
-    %if     FCT(end,:) == 'tanh'    E_tmp = (1-S_tmp.^2).*(train_out-S_tmp); % old
-    %elseif FCT(end,:) == 'linr'    E_tmp = train_out-S_tmp;   end           % old
-    if     FCT(end,:) == 'tanh',    E_tmp = (1-S_tmp.^2).*(S_tmp-train_out);  % new <<<<<<<<<<<<<<<<<
-    elseif FCT(end,:) == 'linr',    E_tmp = S_tmp-train_out;   end            % new <<<<<<<<<<<<<<<<<
+    if     FCT(end,:) == 'tanh',    E_tmp = (1-S_tmp.^2).*(S_tmp-train_out);
+    elseif FCT(end,:) == 'linr',    E_tmp = S_tmp-train_out;   end      
 
     E_tmp(isnan(E_tmp))=0;                       % NaN: missing data
     if WEIGHTED_DATA, E_tmp=E_tmp.*DATADIST; end % weighted data 
@@ -1430,22 +1429,19 @@ n_out(1:train_in_dim,:) = feval( FCT(1,:) , train_in ); % for 'circ'
     
     end  
 
-% dw = -matrices2vector(dW); % old 
 dw = matrices2vector(dW); % new <<<<<<<<<<<< 
 
 
 if INVERSE
   if FIXED_WEIGHTS
-    dw = reshape(E_tmp,numel(E_tmp),1);         % new <<<<<<<<<<<< 
-    % dw = -reshape(E_tmp,prod(size(E_tmp)),1); % old 
+    dw = reshape(E_tmp,numel(E_tmp),1); 
     w=zeros( numel(train_in) , 1 ); % weight decay off 
   else
-    dw = [ reshape(E_tmp,num_elements,1) ; dw ];   % new <<<<<<<<<<<< 
-    %dw = [ -reshape(E_tmp,num_elements,1) ; dw ]; % old 
+    dw = [ reshape(E_tmp,num_elements,1) ; dw ];    
     if CIRCULAR  
       w=[zeros(num_elements,1);w]; % no weight decay for input      
     else
-      w=[0.01*w_train_in;w]; % smooth (0.01) weight decay also for input values     % new <<<<<<<<<<<< 
+      w=[0.01*w_train_in;w]; % smooth (0.01) weight decay also for input values
     end
   end
 end
