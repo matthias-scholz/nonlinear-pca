@@ -1454,9 +1454,8 @@ end
 
 dw = dw +  weight_decay_vector .* w; 
 
-% % old 2018 version, confusing and wrong for w_train_in
+% % old 2018 version, might not be wrong, but confusing
 % % (correctly should be: 0.01 * WEIGHT_DECAY * w_train_in)
-% % may need to correct also derror_hierachic !!!
 % if INVERSE
 %   if FIXED_WEIGHTS
 %     dw = reshape(E_tmp,numel(E_tmp),1); 
