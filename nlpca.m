@@ -241,7 +241,7 @@ global CIRCULAR_R
 global SILENCE
 
 
-NLPCAversion=0.9;
+NLPCAversion=0.91; % 2019-01-18
 
 
   h=struct('data_train_in',[],...            %  1
