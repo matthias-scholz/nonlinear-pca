@@ -27,7 +27,7 @@ function nlpca_plot(w_all,error_func,train_in,train_out)
 %  along with this program; if not, write to the Free Software
 %  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 %
-%  Copyright (C) 2006-2017 Matthias Scholz
+%  Copyright (C) 2006-2019 Matthias Scholz
 %  http://www.nlpca.org/matlab.html
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
