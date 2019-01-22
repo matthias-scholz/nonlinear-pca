@@ -365,7 +365,7 @@ NLPCAversion=0.91; % 2019-01-18
     num_NaN=0;
     if ~isempty(h.data_train_out)
       idx_NaN=isnan(h.data_train_out);
-      num_NaN=sum(sum(idx_NaN));
+      num_NaN=sum(sum(sum(idx_NaN)));
     end
 
     if isempty(h.type), h.type='bottleneck'; end    
@@ -514,7 +514,7 @@ HIERARCHIC_MODE  = strcmp(h.mode,'hierarchic');
 HIERARCHIC_LAYER = h.hierarchic_layer;
 HIERARCHIC_VAR   = h.hierarchic_coefficients;
 HIERARCHIC_IDX   = h.hierarchic_idx;
-SORT_COMPONENTS    = strcmp(h.sort_components,'yes');
+SORT_COMPONENTS  = strcmp(h.sort_components,'yes');
 NET              = h.units_per_layer;  
   if ~SILENCE, 
     fprintf(1,'# number of components: %i\n',h.number_of_components);
@@ -2922,13 +2922,15 @@ global TRAIN_OUT
   if h.units_per_layer(end) ~= size(TRAIN_OUT,1)
     s1=num2str(h.units_per_layer(end));
     s2=num2str(size(TRAIN_OUT,1));
-    error(['Dimension of output data ',s2,' ~= ',s1,' number of output units'])
+    s3=['Dimension of output data ',s2,' ~= ',s1,' number of output units'];
+    if ndims(TRAIN_OUT) == 2, error(s3), else, fprintf(1,['# WARNING: ',s3,'\n']), end % 2019  
   end
   if ~isempty(TRAIN_IN)
    if h.units_per_layer(1) ~= size(TRAIN_IN,1)
     s1=num2str(h.units_per_layer(1));
     s2=num2str(size(TRAIN_IN,1));
-    error(['Dimension of input data ',s2,' ~= ',s1,' number of input units'])
+    s3=['Dimension of input data ',s2,' ~= ',s1,' number of input units'];
+    if ndims(TRAIN_IN) == 2, error(s3), else, fprintf(1,['# WARNING: ',s3,'\n']), end % 2019 
    end
   end
 
@@ -3191,9 +3193,10 @@ for n=3:2:size(args,2)
    elseif ~iscellstr(args(n+1))
       fprintf(1,'Invalid value for ''%s''\n',args{n})
       fprintf(1,' use: ''set_weights_randomly'' or ''set_weights_linear''\n\n'); error('Invalid value'); 
-   elseif ~ismember(args(n+1),{'set_weights_randomly','set_weights_linear'})
-      fprintf(1,'Invalid value ''%s'' for argument ''%s''\n',args{n+1},args{n})
-      fprintf(1,' use: ''set_weights_randomly'' or ''set_weights_linear''\n\n'); error('Invalid value'); 
+   % % 2019: allow customized function 
+   % elseif ~ismember(args(n+1),{'set_weights_randomly','set_weights_linear'})
+   %    fprintf(1,'Invalid value ''%s'' for argument ''%s''\n',args{n+1},args{n})
+   %    fprintf(1,' use: ''set_weights_randomly'' or ''set_weights_linear''\n\n');  error('Invalid value'); 
    end
  end
  
