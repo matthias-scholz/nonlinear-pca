@@ -734,7 +734,7 @@ if ~SILENCE, fprintf(1,'\n# network training - finished \n\n'); end
       E_TEST=E_TEST  * 1/h.scaling_factor.^2;
     end
   % error correction, add pca residual error
-    if h.units_per_layer(end) < size(h.data_train_in,1)
+    if strcmp(h.pre_pca,'yes') % h.units_per_layer(end) < size(h.data_train_in,1)
       % if ~SILENCE, fprintf(1,'# correcting error, add the error of residual pca components\n'); end
       E_TRAIN = E_TRAIN * h.units_per_layer(end)/size(h.data_train_in,1)...
                 + h.pca_residual_train_error;
