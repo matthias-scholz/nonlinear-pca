@@ -51,7 +51,7 @@ nlpca_plot(net)
 ### Download ###
 * [Latest Version](https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/get/default.zip)
 ```
-wget https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/get/default.zip
+wget https://bitbucket.org/matthias-scholz/nonlinear-pca-toolbox-for-matlab/get/master.zip
 ```
 
 ### Help ###
