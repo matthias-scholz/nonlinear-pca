@@ -23,7 +23,7 @@ data_reconstruction = nlpca_get_data(net, pc)
 
 ### Example ###
 
-In this example nonlinear PCA (circular PCA) is applied to artificial data of a noisy circle.
+Nonlinear PCA (circular PCA) applied to artificial data of a noisy circle.
 
 ```
 % generate circular data
