@@ -7,7 +7,6 @@
 ### Syntax ###
 
 ```
-#!python
 [pc, net] = nlpca(data, k)
 
 pc = nlpca_get_components(net, data)
@@ -27,7 +26,6 @@ data_reconstruction = nlpca_get_data(net, pc)
 In this example nonlinear PCA (circular PCA) is applied to artificial data of a noisy circle.
 
 ```
-#!python
 % generate circular data
 t=linspace(-pi , +pi , 100);  % angular value t=-pi,...,+pi
 data = [sin(t);cos(t)];       % circle
