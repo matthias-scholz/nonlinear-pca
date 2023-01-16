@@ -42,7 +42,7 @@ function [pc, net, network] = nlpca(varargin)
 %  along with this program; if not, write to the Free Software
 %  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 %
-%  Copyright (C) 2006-2019 Matthias Scholz   
+%  Copyright (C) 2006-2023 Matthias Scholz   
 %  http://www.nlpca.org/matlab.html
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -241,11 +241,12 @@ global CIRCULAR_R
 global SILENCE
 
 
-NLPCAversion=0.91; % 2019-01-18
+NLPCAversion=0.92; % 2023-01-16
 
 
-  h=struct('data_train_in',[],...            %  1
-           'data_train_out',[],...           %  2
+  h=struct('data_train_in',[],...            %
+           'data_train_out',[],...           %  raw data (no preprocessing)
+           'data_train_pc',[],...            %  output (component values)
            'data_weight_out',[],...           
            'data_test_in',[],...             %  3
            'data_test_out',[],...            %  4
@@ -744,8 +745,9 @@ if ~SILENCE, fprintf(1,'\n# network training - finished \n\n'); end
   h.train_error        = [h.train_error ,E_TRAIN];
   h.test_error         = [h.test_error  ,E_TEST];
   h.train_function_error= [h.train_function_error,E_TRAIN_FUNCTION];
-
-% inverse training - extracting estimated input data from weight vector
+ 
+  % save pc components
+  % inverse: extracting estimated input data from weight vector
   if strcmp(h.type,'inverse')
     num_elements = NET(1)*size(h.data_train_out,2);
     h.data_train_in  = reshape(h.weight_vector(1:num_elements),...
@@ -753,6 +755,11 @@ if ~SILENCE, fprintf(1,'\n# network training - finished \n\n'); end
     if CIRCULAR, h.data_train_in=net_pq2phi(h.data_train_in); end
     h.weight_vector  = h.weight_vector(num_elements+1 : end);
     VIDEO_WEIGHTS    = VIDEO_WEIGHTS(num_elements+1:end,:);
+    h.data_train_pc  = h.data_train_in;
+  elseif strcmp(h.type,'bottleneck')
+    % extract pc always by using symmetric network (avoid hierachic subnet)
+    [~,~,~,n_out]=derror_symmetric(h.weight_vector,TRAIN_IN,TRAIN_OUT);
+    h.data_train_pc = n_out( sum(NET(1:h.component_layer-1))+1 : sum(NET(1:h.component_layer)) ,:);
   end
 
 h.video_weights = [h.video_weights,VIDEO_WEIGHTS];
@@ -762,32 +769,36 @@ h.best_test_weights=BEST_TEST_WEIGHTS;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Estimate explained variance of each nonlinear component
 
-for i=1:size(h.data_train_out,1) % get total variance, by using all available values
+% only for standard networks
+if ismember(h.error_function,{'error_symmetric','error_hierarchic'})
+    
+ for i=1:size(h.data_train_out,1) % get total variance, by using all available values
    v(i)=var(h.data_train_out(i,~isnan(h.data_train_out(i,:)))); 
-end
-total_variance=sum(v(~isnan(v)));
+ end
+ total_variance=sum(v(~isnan(v)));
 
-pc=nlpca_get_components(h);
-evals=nan(1,h.number_of_components);
-for i=1:h.number_of_components 
+ pc=nlpca_get_components(h);
+ evals=nan(1,h.number_of_components);
+ for i=1:h.number_of_components 
   pcx=zeros(size(pc));
   pcx(i,:)=pc(i,:); % only PC_i, set remaining PC's to zero
   data_recon=nlpca_get_data(h,pcx);
   evals(i)=sum(var(data_recon'));
-end
+ end
 
-percentVar=evals./total_variance*100; 
-percentVar=round(percentVar*100)/100;
+ percentVar=evals./total_variance*100; 
+ percentVar=round(percentVar*100)/100;
 
-h.variance=percentVar;
+ h.variance=percentVar;
 
-if ~SILENCE, 
+ if ~SILENCE 
   fprintf(1,'# Explained variance (see: net.variance)\n')
   for i=1:min(3,h.number_of_components) 
     fprintf(1,'  # nonlinear PC %i: %.2f%%\n',i,h.variance(i))
   end
-end
+ end
 
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if nargout == 2
@@ -965,7 +976,11 @@ for i=1:ITMAX
   end
  
   if (SAVE_ERROR || PRINT_ERROR)
-   [E_train,E_test]=get_error(w,func); 
+   if ismember(func,{'error_symmetric','error_hierarchic'})
+     [E_train,E_test]=get_error(w,func); 
+   else
+     E_train=[]; E_test=[];
+   end
    E_TRAIN=[E_TRAIN,E_train'];
    E_TEST =[E_TEST,E_test'];
    if ~isempty(BEST_TEST_WEIGHTS)
@@ -1172,12 +1187,12 @@ global CIRCULAR
 
 
 if INVERSE
+   num_elements = NET(1)*size(train_out,2);
    if FIXED_WEIGHTS
      train_in = reshape( w , NET(1) , size(train_out,2) );
      w_train_in=w;  
      w=FIXED_WEIGHTS;
    else
-     num_elements = NET(1)*size(train_out,2);
      train_in = reshape( w(1:num_elements) , NET(1) , size(train_out,2) );
      w_train_in=w(1:num_elements); % new <<<<<<<<<<<<<<<<<
      w   = w(num_elements+1 : end);
@@ -1287,12 +1302,12 @@ global CIRCULAR_R
 
 
 if INVERSE
+   num_elements = NET(1)*size(train_out,2);
    if FIXED_WEIGHTS
      train_in = reshape( w , NET(1) , size(train_out,2) );
      w_train_in=w;  
      w=FIXED_WEIGHTS;
    else
-     num_elements = NET(1)*size(train_out,2);
      train_in = reshape( w(1:num_elements) , NET(1) , size(train_out,2) );
      w_train_in=w(1:num_elements); % inverse input is represented as weights
      w   = w(num_elements+1 : end);
@@ -1925,10 +1940,11 @@ for i=1:net_num-1
 end  
 
 if pos_end < length(w)
-  fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
+  %fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
   %size_w=size(w)
   %NET
-  stop
+  %stop
+  error('ERROR in vector2matrice -- w has to many elements')
 end
 
 
@@ -2735,9 +2751,16 @@ function net=reduce_parameters(h)
 % Author   : Matthias Scholz
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NET
+global SILENCE
+
+% redunce only if error-function is classic symmetric or hierarchic
+if ~ismember(h.error_function,{'error_symmetric','error_hierarchic'})
+  net=h;
+else
 
   net=struct('data_train_in',      [],... 
              'data_train_out',     [],...
+             'data_train_pc',      [],...  % output (component values)
              'data_class',         [],...  % [1,1,1,1, 2,2,2,2, 3,3,3,3]
              'mode',               [],...  % { symmetric | hierarchic }
 	         'type',               [],...  % { inverse | bottleneck }
@@ -2752,11 +2775,13 @@ global NET
 
   net.data_train_in =h.data_train_in;
   net.data_train_out=h.data_train_out;
-  if h.version >= 0.71, 
+  if h.version >= 0.71
     net.data_class=h.data_class; 
     net.version=h.version;
-  end;
-
+  end
+  if h.version >= 0.92
+    net.data_train_pc=h.data_train_pc;
+  end
   net.mode=h.mode;
   net.type=h.type;
   net.units_per_layer=h.units_per_layer;
@@ -2899,6 +2924,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   net.weight_matrices=W;
+
+end % end of setting reduction
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

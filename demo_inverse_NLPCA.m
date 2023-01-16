@@ -21,7 +21,7 @@
     
 % component extraction
 
-    [c,net,network]=nlpca(data,1,'type','inverse',  'max_iteration',3000);
+    [pc,net,network]=nlpca(data,1,'type','inverse',  'max_iteration',3000);
 
     
     

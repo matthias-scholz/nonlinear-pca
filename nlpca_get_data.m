@@ -1,7 +1,7 @@
 function [S,dz] = nlpca_get_data(net,pc)
 % data = nlpca_get_data(net,pc)  % generating data from new component values 'pc'
 % data = nlpca_get_data(net)     % reconstruction of train data
-% [data,dz] = nlpca_get_data(net,pc) % get data and drivatives for component values 'pc'
+% [data,dz] = nlpca_get_data(net,pc) % get data and derivatives for component values 'pc'
 %
 % using network architecture 'net'
 % from [pc, net, network] = nlpca(data,k)
@@ -35,12 +35,24 @@ function [S,dz] = nlpca_get_data(net,pc)
 %  along with this program; if not, write to the Free Software
 %  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 %
-%  Copyright (C) 2006-2019 Matthias Scholz
+%  Copyright (C) 2006-2023 Matthias Scholz
 %  http://www.nlpca.org/matlab.html
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+global SILENCE
 global CIRCULAR_INDEX
+global INVERSE
+global NET
+global FCT
+global WEIGHT_DECAY
 
+% if standard error function
+if isfield(net,'weight_matrices') || ismember(net.error_function,{'error_symmetric','error_hierarchic'}) 
+
+if ~isfield(net,'weight_matrices') 
+  net=reduce_parameters(net);
+end  
+    
 if strcmp(net.circular,'yes')
     cidx=net.circular_idx;
     pos=find(cidx==1);
@@ -51,10 +63,6 @@ if strcmp(net.circular,'yes')
     CIRCULAR_INDEX=reshape(cnidx,2,size(pos,2));
 end
 
-if ~isfield(net,'weight_matrices') 
-  net=reduce_parameters(net);
-end
-
 fct=net.functions_per_layer;
  if (length(net.units_per_layer)-1) == size(net.functions_per_layer,1)
    fct=['linr';fct] % in case of older versions
@@ -63,7 +71,7 @@ W=net.weight_matrices;
 
 
 % propagation of component values through part II of the network
-  if nargin==2 
+  if nargin==2 % nlpca_get_data(net,pc)
     num_units=net.units_per_layer(net.component_layer);
     if size(pc,1) > num_units
      s1=['number of components (',num2str(size(pc,1)),') have to be equal '];
@@ -78,9 +86,9 @@ W=net.weight_matrices;
      fprintf(1,[s1,s2,s3,s4])
     end
 
-    %S=pc;
+    %S=pc; % inverse part only
     S=zeros(num_units,size(pc,2));
-    S(1:size(pc,1),:)=pc;
+    S(1:size(pc,1),:)=pc; % in case of pc subset (only pc1)
       if strcmp(net.circular,'yes') 
         S=net_phi2pq(S); % enlarge component layer
       end
@@ -95,11 +103,11 @@ W=net.weight_matrices;
 
 
 % propagation of input data
-  if nargin==1 
+  if nargin==1 % nlpca_get_data(net)
     S=net.data_train_in;
       if strcmp(net.circular,'yes') && strcmp(net.type,'inverse')
         S=net_phi2pq(S); %enlarge component (input) layer
-      end; 
+      end
     S=feval(fct(1,:),S);
     S_bias=ones(1,size(S,2));
 
@@ -115,13 +123,15 @@ W=net.weight_matrices;
 
 if nargout==2 % calcuation of derivative only if requested
 
-  if nargin==1 % used original components, if pc is not given as input
+  if nargin==1 % use original components, if pc is not given as input
     pc=nlpca_get_components(net);
   end    
 
+  % use only one input component
   if size(pc,1) > 1
-    pc=pc(1,:); % use only first component  
-    fprintf(1,'# derivative ''dz'' is calculated with respect to ''first'' component only\n'); 
+    pc=pc(1,:); % set always pc dim=1 (2nd 3rd pc: zeros are in full size S)
+    fprintf(1,'# derivative ''dz'' is calculated with respect'); 
+    fprintf(1,' to ''first'' component only\n'); 
   end
 
 
@@ -130,13 +140,13 @@ if nargout==2 % calcuation of derivative only if requested
       S=zeros(num_units,size(pc,2));
       dz=zeros(num_units,size(pc,2));
 
-    if strcmp(net.circular,'yes') && net.circular_idx(1)==1,
+    if strcmp(net.circular,'yes') && net.circular_idx(1)==1
       S(1,:) = cos(pc);
       S(2,:) = sin(pc);
       dz(1,:) = -sin(pc);
       dz(2,:) =  cos(pc);
     else
-      S(1,:) = pc;
+      S(1,:) = pc; % pc always dim=1
       dz(1,:) = ones(size(pc));
     end
 
@@ -156,7 +166,45 @@ if nargout==2 % calcuation of derivative only if requested
 
 end
 
- 
+else % run custom or test-function (defined in net.error_function)
+  % run inverse part: pc -> data, using h-network settings (not simplified 'net')
+  % bottleneck and pre-pca: implemented, but not tested yet
+  if ~SILENCE, fprintf(1,'# use custom function: %s\n',net.error_function); end
+  if ~isfield(net,'weight_vector')
+   error('ERROR get_data.m: custom function works only with all network settings')
+  end
+  if nargout==2
+   error('ERROR get_data.m: gradient dz not implemented for custom function')  
+  end
+    % switch off any activated inverse-mode to use pc's as input data (not as weights)
+    INVERSE=0; 
+    % simulate bottleneck as inverse network
+    FCT=net.functions_per_layer(net.component_layer:end,:);
+    NET=net.units_per_layer(net.component_layer:end);
+    % get weight-decay error (E) as in training mode (anyway E is not used)
+    WEIGHT_DECAY=net.weight_decay_coefficient;
+    if nargin==1 % nlpca_get_data(net) without new pc's
+      if strcmp(net.type,'inverse')
+        pc = net.data_train_in;
+      else % bottleneck
+        pc = nlpca_get_components(net); 
+      end
+    end
+    num_units=net.units_per_layer(net.component_layer);
+    if size(pc,1) ~= num_units, error('PC input dim does not fit number of input units'); end
+      data=net.data_train_out;
+      w   =net.weight_vector;
+    % run error function defined in network settings
+    [E,net_out]=feval(net.error_function,w,pc,data);
+    S=net_out/net.scaling_factor; % correct for normalization
+    if strcmp(net.pre_pca,'yes')
+      S = net.inverse_eigenvectors * S + net.pca_removed_mean; 
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function a=circ(a)
 % old: function [a,circ_r]=circ(a)
 %
@@ -327,9 +375,16 @@ function net=reduce_parameters(h)
 % Author   : Matthias Scholz
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NET
+global SILENCE
+
+% redunce only if error-function is classic symmetric or hierarchic
+if ~ismember(h.error_function,{'error_symmetric','error_hierarchic'})
+  net=h;
+else
 
   net=struct('data_train_in',      [],... 
              'data_train_out',     [],...
+             'data_train_pc',      [],...  % output (component values)
              'data_class',         [],...  % [1,1,1,1, 2,2,2,2, 3,3,3,3]
              'mode',               [],...  % { symmetric | hierarchic }
 	         'type',               [],...  % { inverse | bottleneck }
@@ -343,11 +398,13 @@ global NET
 
   net.data_train_in =h.data_train_in;
   net.data_train_out=h.data_train_out;
-  if h.version >= 0.71, 
+  if h.version >= 0.71
     net.data_class=h.data_class; 
     net.version=h.version;
-  end;
-
+  end
+  if h.version >= 0.92
+    net.data_train_pc=h.data_train_pc;
+  end
   net.mode=h.mode;
   net.type=h.type;
   net.units_per_layer=h.units_per_layer;
@@ -490,6 +547,8 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   net.weight_matrices=W;
 
+end % end of setting reduction
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -537,10 +596,11 @@ for i=1:net_num-1
 end  
 
 if pos_end < length(w)
-  fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
+  %fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
   %size_w=size(w)
   %NET
-  stop
+  %stop
+  error('ERROR in vector2matrice -- w has to many elements')
 end
 
 

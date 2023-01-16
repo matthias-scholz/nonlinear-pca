@@ -30,7 +30,7 @@ function pc = nlpca_get_components(net,data)
 %  along with this program; if not, write to the Free Software
 %  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 %
-%  Copyright (C) 2006-2019 Matthias Scholz
+%  Copyright (C) 2006-2023 Matthias Scholz
 %  http://www.nlpca.org/matlab.html
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -40,13 +40,7 @@ global GROUP
 if isempty(SILENCE),  SILENCE=false; end
 
 
-if ~isfield(net,'weight_matrices') 
-  net=reduce_parameters(net);
-end
-
-fct=net.functions_per_layer;
-W=net.weight_matrices;
-
+% classification
 if nargin==1
   if ~isempty(net.data_class) % set GROUP labels
     GROUP=net.data_class;
@@ -58,13 +52,23 @@ end
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% bottleneck type
 
 if strcmp(net.type,'bottleneck')
+    
+   if ~isfield(net,'weight_matrices') 
+     net=reduce_parameters(net);
+   end
+
+   fct=net.functions_per_layer;
+   W=net.weight_matrices;
+    
    if nargin==1
      data=net.data_train_in;     
    end
 
    % check data
+   
        num_units=net.units_per_layer(1);
        if size(data,1) ~= num_units
         s1=['dimension of data (',num2str(size(data,1)),') must be equal to '];
@@ -88,51 +92,71 @@ if strcmp(net.type,'bottleneck')
        pc=S;
        
        if strcmp(net.circular,'yes'), pc=net_pq2phi(pc); end
-end
+
+end % end of bottleneck
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% inverse type
 
 if strcmp(net.type,'inverse')
-  if nargin==1
+    
+  % without new data, simply return already estimated training input pc's
+  if nargin==1 
     pc=net.data_train_in;
-  end
+  end  
 
-  if nargin==2
+  % estimate best pc's for new data (input pc optimization)
+  if nargin==2 %
 
-     % check data
+     % check data (standard error function)
+     if isfield(net,'weight_matrices') || ismember(net.error_function,{'error_symmetric','error_hierarchic'}) 
        num_units=net.units_per_layer(end);
        if size(data,1) ~= num_units
         s1=['dimension of data (',num2str(size(data,1)),') must be equal to '];
         error([s1,'number of units in last layer (',num2str(num_units),')'])
        end
+     end
 
   % if ~SILENCE
     fprintf(1,'# estimating optimal input\n'); 
   % end;
-                                                                               
-  w=[];  
-  for i=1:length(net.units_per_layer)-1
-    % w=[w;reshape(net.weight_matrices{i},prod(size(net.weight_matrices{i})),1)];
-    w=[w;reshape(net.weight_matrices{i}, numel(net.weight_matrices{i}) ,1)];
+    
+  % set FIXED_WEIGHTS: constant weights of the network (all real matrices W)
+  % exclude and optimize semi-weights of input pc
+  if isfield(net,'weight_matrices') % working with reduced net settings
+    % convert matrices back to weight-vector, same as: w=matrices2vector(W)
+    w=[];  
+    for i=1:length(net.units_per_layer)-1
+      w=[w;reshape(net.weight_matrices{i}, numel(net.weight_matrices{i}) ,1)];
+    end
+    FIXED_WEIGHTS  = w;
+  else % working with full network settings
+    FIXED_WEIGHTS  = net.weight_vector; % input pc, already excluded
   end
-  FIXED_WEIGHTS=w;  % constant weights of the network
-
+  
+    % create larger network settings to train (optimize) input pc's
     tmp=struct('data_train_out'     ,data,...
                'mode'               ,'symmetric',...
-               'type'               ,'inverse',...
-               'units_per_layer'    ,net.units_per_layer,...
+               'type'               ,'inverse'  ,...
+               'units_per_layer'    ,net.units_per_layer    ,...
                'functions_per_layer',net.functions_per_layer,...
                'component_layer'    ,1,...
-               'circular'           ,net.circular,...
-               'circular_idx'       ,net.circular_idx,...
+               'circular'           ,net.circular     ,...
+               'circular_idx'       ,net.circular_idx ,...
+               'error_function',    'error_symmetric' ,...
+               'gradient_function', 'derror_symmetric',...
                'weight_decay'       ,'no',...
                'pre_scaling'        ,'no',...
                'plotting'           ,'no',...
                'silence'           ,'yes',...
                'max_iteration'      ,50);
+    % use original error function, if exist
+    if isfield(net,'error_function'),   tmp.error_function   =net.error_function;    end
+    if isfield(net,'gradient_function'),tmp.gradient_function=net.gradient_function; end
+    if isfield(net,'pre_scaling'),      tmp.pre_scaling      =net.pre_scaling;       end
 
-    % tmp = train_network(tmp);
-                                                                               
+
+    % optimze input pc                                                                           
     best_result= zeros(net.units_per_layer(1), size(data,2));
     e_best     = repmat(inf,1,size(data,2));
     num_corrected  = size(data,2);
@@ -140,14 +164,15 @@ if strcmp(net.type,'inverse')
                                                                                
     while ((num_corrected > 0.05*size(data,2)) && (n<100 )) || (n<20)
       % use 20 runs, if then correction is still needed: use upto 100 runs
-      tmp = train_network(tmp);
+      tmp = train_network(tmp); % optimization of input pc
       components = tmp.data_train_in;
       out = nlpca_get_data(net,components);
        %e   = mean((out-data).^2, 1);  % does not work with NaN's 
        e=(out-data).^2;
        e(isnan(e))=0;
        e=sum(e);
-      idx=(e_best > e);
+      % select/update best pc-value for each sample 
+      idx=(e_best > e); 
       best_result(:,idx) = components(:,idx);
       e_best(idx) = e(idx);
       num_corrected=sum(idx);
@@ -160,9 +185,10 @@ if strcmp(net.type,'inverse')
                                                                                
     pc=best_result;
   end
-end
+FIXED_WEIGHTS=[]; 
+end % end of inverse
 
-FIXED_WEIGHTS=[];
+
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -338,9 +364,16 @@ function net=reduce_parameters(h)
 % Author   : Matthias Scholz
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global NET
+global SILENCE
+
+% redunce only if error-function is classic symmetric or hierarchic
+if ~ismember(h.error_function,{'error_symmetric','error_hierarchic'})
+  net=h;
+else
 
   net=struct('data_train_in',      [],... 
              'data_train_out',     [],...
+             'data_train_pc',      [],...  % output (component values)
              'data_class',         [],...  % [1,1,1,1, 2,2,2,2, 3,3,3,3]
              'mode',               [],...  % { symmetric | hierarchic }
 	         'type',               [],...  % { inverse | bottleneck }
@@ -354,11 +387,13 @@ global NET
 
   net.data_train_in =h.data_train_in;
   net.data_train_out=h.data_train_out;
-  if h.version >= 0.71, 
+  if h.version >= 0.71
     net.data_class=h.data_class; 
     net.version=h.version;
-  end;
-
+  end
+  if h.version >= 0.92
+    net.data_train_pc=h.data_train_pc;
+  end
   net.mode=h.mode;
   net.type=h.type;
   net.units_per_layer=h.units_per_layer;
@@ -500,6 +535,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   net.weight_matrices=W;
+
+end % end of setting reduction
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -780,7 +817,7 @@ NLPCAversion=0.88;
     num_NaN=0;
     if ~isempty(h.data_train_out)
       idx_NaN=isnan(h.data_train_out);
-      num_NaN=sum(sum(idx_NaN));
+      num_NaN=sum(sum(sum(idx_NaN)));
     end
 
     if isempty(h.type), h.type='bottleneck'; end    
@@ -791,8 +828,8 @@ NLPCAversion=0.88;
                                   zeros(size(h.data_train_out(:,1))) );
     end
 
-    if num_NaN > 0 && ~strcmp(h.pre_pca,'yes');
-      if ~SILENCE, 
+    if num_NaN > 0 && ~strcmp(h.pre_pca,'yes')
+      if ~SILENCE
        fprintf(1,'# detecting NaN in ".data_train_out", using "data_weight"\n')
       end
       if isempty(h.data_weight_out)
@@ -801,7 +838,7 @@ NLPCAversion=0.88;
       h.data_weight_out(idx_NaN)=zeros;
     end
     
-    if isempty(h.weighted_data),
+    if isempty(h.weighted_data)
       if ~isempty(h.data_weight_out)
         h.weighted_data='yes'; else h.weighted_data='no';
       end
@@ -1556,12 +1593,12 @@ global CIRCULAR
 
 
 if INVERSE
+   num_elements = NET(1)*size(train_out,2);
    if FIXED_WEIGHTS
      train_in = reshape( w , NET(1) , size(train_out,2) );
      w_train_in=w;  
      w=FIXED_WEIGHTS;
    else
-     num_elements = NET(1)*size(train_out,2);
      train_in = reshape( w(1:num_elements) , NET(1) , size(train_out,2) );
      w_train_in=w(1:num_elements); % new <<<<<<<<<<<<<<<<<
      w   = w(num_elements+1 : end);
@@ -1671,12 +1708,12 @@ global CIRCULAR_R
 
 
 if INVERSE
+   num_elements = NET(1)*size(train_out,2);
    if FIXED_WEIGHTS
      train_in = reshape( w , NET(1) , size(train_out,2) );
      w_train_in=w;  
      w=FIXED_WEIGHTS;
    else
-     num_elements = NET(1)*size(train_out,2);
      train_in = reshape( w(1:num_elements) , NET(1) , size(train_out,2) );
      w_train_in=w(1:num_elements); % inverse input is represented as weights
      w   = w(num_elements+1 : end);
@@ -2197,10 +2234,11 @@ for i=1:net_num-1
 end  
 
 if pos_end < length(w)
-  fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
+  %fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
   %size_w=size(w)
   %NET
-  stop
+  % stop
+  error('ERROR in vector2matrice -- w has to many elements')
 end
 
 

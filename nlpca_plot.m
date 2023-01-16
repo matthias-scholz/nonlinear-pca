@@ -27,7 +27,7 @@ function nlpca_plot(w_all,error_func,train_in,train_out)
 %  along with this program; if not, write to the Free Software
 %  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 %
-%  Copyright (C) 2006-2019 Matthias Scholz
+%  Copyright (C) 2006-2023 Matthias Scholz
 %  http://www.nlpca.org/matlab.html
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -449,10 +449,11 @@ for i=1:net_num-1
 end  
 
 if pos_end < length(w)
-  fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
+  %fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
   %size_w=size(w)
   %NET
-  stop
+  %stop
+  error('ERROR in vector2matrice -- w has to many elements')
 end
 
 
