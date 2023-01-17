@@ -383,6 +383,7 @@ else
              'circular',           [],...  % yes, no
              'circular_idx',       [],...  % [1,0,0]
              'weight_matrices',    [],...  % W{1} ... W{4}
+             'variance',           [],...  % explained variance of nonlinear PC's
              'version',            []);    % 0.71
 
   net.data_train_in =h.data_train_in;
@@ -401,6 +402,7 @@ else
   net.component_layer=h.component_layer;
   net.circular=h.circular;
   net.circular_idx=h.circular_idx;
+  net.variance=h.variance;
 
   NET=h.units_per_layer;
   if strcmp(h.circular,'yes') 
@@ -543,7 +545,8 @@ end % end of setting reduction
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [h,net]=train_network(h_in)
+function h=train_network(h_in)
+% function [h,net]=train_network(h_in)
 %
 % Artificial Neural Network (MLP) for performing non-linear PCA.
 % Network is trained by using the data and parameters of struct h.xxx 
@@ -694,11 +697,12 @@ global CIRCULAR_R
 global SILENCE
 
 
-NLPCAversion=0.88;
+NLPCAversion=0.92; % 2023-01-16
 
 
-  h=struct('data_train_in',[],...            %  1
-           'data_train_out',[],...           %  2
+  h=struct('data_train_in',[],...            %
+           'data_train_out',[],...           %  raw data (no preprocessing)
+           'data_train_pc',[],...            %  output (component values)
            'data_weight_out',[],...           
            'data_test_in',[],...             %  3
            'data_test_out',[],...            %  4
@@ -742,6 +746,7 @@ NLPCAversion=0.88;
            'pca_removed_mean',[],...         % 47 result
            'eigenvectors',[],...             % 48 result
            'inverse_eigenvectors',[],...     % 49 result
+           'variance',[],...                 % result: NLPCA explained variance  
            ...
            'stepwise_error',[],...           % 61 yes, no 
            'printing_error',[],...           % 61 yes, no 
@@ -828,8 +833,8 @@ NLPCAversion=0.88;
                                   zeros(size(h.data_train_out(:,1))) );
     end
 
-    if num_NaN > 0 && ~strcmp(h.pre_pca,'yes')
-      if ~SILENCE
+    if num_NaN > 0 && ~strcmp(h.pre_pca,'yes');
+      if ~SILENCE, 
        fprintf(1,'# detecting NaN in ".data_train_out", using "data_weight"\n')
       end
       if isempty(h.data_weight_out)
@@ -838,7 +843,7 @@ NLPCAversion=0.88;
       h.data_weight_out(idx_NaN)=zeros;
     end
     
-    if isempty(h.weighted_data)
+    if isempty(h.weighted_data),
       if ~isempty(h.data_weight_out)
         h.weighted_data='yes'; else h.weighted_data='no';
       end
@@ -966,7 +971,7 @@ HIERARCHIC_MODE  = strcmp(h.mode,'hierarchic');
 HIERARCHIC_LAYER = h.hierarchic_layer;
 HIERARCHIC_VAR   = h.hierarchic_coefficients;
 HIERARCHIC_IDX   = h.hierarchic_idx;
-SORT_COMPONENTS    = strcmp(h.sort_components,'yes');
+SORT_COMPONENTS  = strcmp(h.sort_components,'yes');
 NET              = h.units_per_layer;  
   if ~SILENCE, 
     fprintf(1,'# number of components: %i\n',h.number_of_components);
@@ -1186,7 +1191,7 @@ if ~SILENCE, fprintf(1,'\n# network training - finished \n\n'); end
       E_TEST=E_TEST  * 1/h.scaling_factor.^2;
     end
   % error correction, add pca residual error
-    if h.units_per_layer(end) < size(h.data_train_in,1)
+    if strcmp(h.pre_pca,'yes') % h.units_per_layer(end) < size(h.data_train_in,1)
       % if ~SILENCE, fprintf(1,'# correcting error, add the error of residual pca components\n'); end
       E_TRAIN = E_TRAIN * h.units_per_layer(end)/size(h.data_train_in,1)...
                 + h.pca_residual_train_error;
@@ -1196,8 +1201,9 @@ if ~SILENCE, fprintf(1,'\n# network training - finished \n\n'); end
   h.train_error        = [h.train_error ,E_TRAIN];
   h.test_error         = [h.test_error  ,E_TEST];
   h.train_function_error= [h.train_function_error,E_TRAIN_FUNCTION];
-
-% inverse training - extracting estimated input data from weight vector
+ 
+  % save pc components
+  % inverse: extracting estimated input data from weight vector
   if strcmp(h.type,'inverse')
     num_elements = NET(1)*size(h.data_train_out,2);
     h.data_train_in  = reshape(h.weight_vector(1:num_elements),...
@@ -1205,16 +1211,23 @@ if ~SILENCE, fprintf(1,'\n# network training - finished \n\n'); end
     if CIRCULAR, h.data_train_in=net_pq2phi(h.data_train_in); end
     h.weight_vector  = h.weight_vector(num_elements+1 : end);
     VIDEO_WEIGHTS    = VIDEO_WEIGHTS(num_elements+1:end,:);
+    h.data_train_pc  = h.data_train_in;
+  elseif strcmp(h.type,'bottleneck')
+    % extract pc always by using symmetric network (avoid hierachic subnet)
+    [~,~,~,n_out]=derror_symmetric(h.weight_vector,TRAIN_IN,TRAIN_OUT);
+    h.data_train_pc = n_out( sum(NET(1:h.component_layer-1))+1 : sum(NET(1:h.component_layer)) ,:);
   end
 
 h.video_weights = [h.video_weights,VIDEO_WEIGHTS];
 h.video_iter    = [h.video_iter,VIDEO_ITER];
 h.best_test_weights=BEST_TEST_WEIGHTS;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if nargout == 2
-  net=reduce_parameters(h);
-end
+% if nargout == 2
+%   net=reduce_parameters(h);
+% end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % reconstruction
 % (out=h.data_train_in;)
@@ -1386,7 +1399,11 @@ for i=1:ITMAX
   end
  
   if (SAVE_ERROR || PRINT_ERROR)
-   [E_train,E_test]=get_error(w,func); 
+   if ismember(func,{'error_symmetric','error_hierarchic'})
+     [E_train,E_test]=get_error(w,func); 
+   else
+     E_train=[]; E_test=[];
+   end
    E_TRAIN=[E_TRAIN,E_train'];
    E_TEST =[E_TEST,E_test'];
    if ~isempty(BEST_TEST_WEIGHTS)
@@ -1875,7 +1892,22 @@ end
 
 dw = dw +  weight_decay_vector .* w; 
 
-
+% % old 2018 version, might not be wrong, but confusing
+% % (correctly should be: 0.01 * WEIGHT_DECAY * w_train_in)
+% if INVERSE
+%   if FIXED_WEIGHTS
+%     dw = reshape(E_tmp,numel(E_tmp),1); 
+%     w=zeros( numel(train_in) , 1 ); % weight decay off 
+%   else
+%     dw = [ reshape(E_tmp,num_elements,1) ; dw ];    
+%     if CIRCULAR  
+%       w=[zeros(num_elements,1);w]; % no weight decay for input      
+%     else
+%       w=[0.01*w_train_in;w]; % smooth (0.01) weight decay also for input values
+%     end
+%   end
+% end
+% dw = dw + WEIGHT_DECAY*w; 
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2237,7 +2269,7 @@ if pos_end < length(w)
   %fprintf(2,'ERROR in vector2matrice -- w has to many elements\n');
   %size_w=size(w)
   %NET
-  % stop
+  %stop
   error('ERROR in vector2matrice -- w has to many elements')
 end
 
@@ -2421,13 +2453,15 @@ global TRAIN_OUT
   if h.units_per_layer(end) ~= size(TRAIN_OUT,1)
     s1=num2str(h.units_per_layer(end));
     s2=num2str(size(TRAIN_OUT,1));
-    error(['Dimension of output data ',s2,' ~= ',s1,' number of output units'])
+    s3=['Dimension of output data ',s2,' ~= ',s1,' number of output units'];
+    if ndims(TRAIN_OUT) == 2, error(s3), else, fprintf(1,['# WARNING: ',s3,'\n']), end % 2019  
   end
   if ~isempty(TRAIN_IN)
    if h.units_per_layer(1) ~= size(TRAIN_IN,1)
     s1=num2str(h.units_per_layer(1));
     s2=num2str(size(TRAIN_IN,1));
-    error(['Dimension of input data ',s2,' ~= ',s1,' number of input units'])
+    s3=['Dimension of input data ',s2,' ~= ',s1,' number of input units'];
+    if ndims(TRAIN_IN) == 2, error(s3), else, fprintf(1,['# WARNING: ',s3,'\n']), end % 2019 
    end
   end
 

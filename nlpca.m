@@ -50,9 +50,12 @@ function [pc, net, network] = nlpca(varargin)
 
   network=check_syntax(varargin);  % check of input arguments
 
-  [network,net]=train_network(network); % component extraction
+  % [network,net]=train_network(network); % component extraction
+  network=train_network(network); % component extraction
 
-  pc = nlpca_get_components(net);   % get components from resulting network
+  network = get_explained_variance(network); % estimate Variance of PCs
+  net     = reduce_parameters(network);
+  pc      = nlpca_get_components(net); % get components from final network
   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -90,7 +93,8 @@ function [pc, net, network] = nlpca(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [h,net]=train_network(h_in)
+function h=train_network(h_in)
+% function [h,net]=train_network(h_in)
 %
 % Artificial Neural Network (MLP) for performing non-linear PCA.
 % Network is trained by using the data and parameters of struct h.xxx 
@@ -767,7 +771,34 @@ h.video_iter    = [h.video_iter,VIDEO_ITER];
 h.best_test_weights=BEST_TEST_WEIGHTS;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% if nargout == 2
+%   net=reduce_parameters(h);
+% end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% reconstruction
+% (out=h.data_train_in;)
+% h.inverse_eigenvectors*out/h.scaling_factor+ repmat(h.pca_removed_mean,1,num)
+%
+% transform new input 
+% [tmp,num] = size(new_data);
+% new_input = h.eigenvectors * (new_data - repmat(h.pca_removed_mean,1,num))...
+%             * h.scaling_factor;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function h=get_explained_variance(h)
+% network=get_explained_variance(network)
+%
 % Estimate explained variance of each nonlinear component
+%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+global SILENCE
 
 % only for standard networks
 if ismember(h.error_function,{'error_symmetric','error_hierarchic'})
@@ -799,27 +830,9 @@ if ismember(h.error_function,{'error_symmetric','error_hierarchic'})
  end
 
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-if nargout == 2
-  net=reduce_parameters(h);
-end
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% reconstruction
-% (out=h.data_train_in;)
-% h.inverse_eigenvectors*out/h.scaling_factor+ repmat(h.pca_removed_mean,1,num)
-%
-% transform new input 
-% [tmp,num] = size(new_data);
-% new_input = h.eigenvectors * (new_data - repmat(h.pca_removed_mean,1,num))...
-%             * h.scaling_factor;
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function idx=get_hierarchic_idx(hierarchic_num)
 % idx=get_hierarchic_idx(hierarchic_num)
 %

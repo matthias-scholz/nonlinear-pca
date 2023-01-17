@@ -394,6 +394,7 @@ else
              'circular',           [],...  % yes, no
              'circular_idx',       [],...  % [1,0,0]
              'weight_matrices',    [],...  % W{1} ... W{4}
+             'variance',           [],...  % explained variance of nonlinear PC's
              'version',            []);    % 0.71
 
   net.data_train_in =h.data_train_in;
@@ -412,6 +413,7 @@ else
   net.component_layer=h.component_layer;
   net.circular=h.circular;
   net.circular_idx=h.circular_idx;
+  net.variance=h.variance;
 
   NET=h.units_per_layer;
   if strcmp(h.circular,'yes') 
